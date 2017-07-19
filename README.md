@@ -47,8 +47,17 @@ For memory and speed improvements, you can use a binary format for these files. 
 Some hyper-parameters of the method need to be specified in a 'numbio.in' file in your case directory. The file should have the following format:
 
 
-         * first row: N minIter maxIter tolStagnation stepSize
-	 * second row: lambda_1 lambda_2 ... lambda_d
+  * first row: numSamples minIter maxIter tolStagnation stepSize
+  * second row: lambda_1 lambda_2 ... lambda_d
+
+Let's explain the hyper-parameters:
+
+      * numSamples: number of samples to be considered (must be <= N).
+      * minIter: minimum number of iterations carried out during the Nesterov gradient descent
+      * maxIter: maximum number of these iterations
+      * tolStagnation: stagnation tolerance on the cost function. Both maxIter and tolStagnation are stopping criteria.
+      * stepSize: initial step size of the Nesterov gradient descent
+      * lambda_k: l1 penalization hyper-parameter for the kth parameter
 
 #### Output
 
