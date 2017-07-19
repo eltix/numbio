@@ -34,3 +34,36 @@ The command to be executed in general is the following:
 > python numericalBiomarkers.py your_case_name plotFigures
 
 where plotFigures is 0 (no figure) or 1 (plot figures).
+
+### How it works
+
+#### Data
+
+The data required by the algorithm to compute the numerical biomarkers consists of parameter samples and associated model outputs: a file 'params.txt' (space seperated columns, ASCII format) of size [numRows, numCols] = [*N* X *d*] where *N* is the number of samples and *d* the number of parameters and a file 'outputs.txt' (same format) of size [*N* X *ny*] where *ny* is the number of dictionary entries. Both these files must be in you case directory (e.g. ./data/demo).
+For memory and speed improvements, you can use a binary format for these files. See our section "Binary format" below.
+
+#### Hyper-parameters
+
+Some hyper-parameters of the method need to be specified in a 'numbio.in' file in your case directory. The file should have the following format:
+
+
+         * first row: N minIter maxIter tolStagnation stepSize
+	 * second row: lambda_1 lambda_2 ... lambda_d
+
+#### Output
+
+After executing the program, a file "weights_[your_case_name].txt" should be written in the current directory. It is of size [*d*+2, *ny*]. The first *d* rows are the dictionary entries weights, the last two rows are respectively vectors *nu* and *tau* used to rescale the dictionary entries.
+
+
+#### Binary format
+
+If your ASCII files have the proper format (see "Data" section above), you can convert them to our binary format. Simply run:
+> python ./utils/compress.py
+[your_file_in_ascii_format_with_txt_extension]
+
+The new files should have the same name but with a ".bin" extension.
+The code in numericalBiomarkers.py will automatically select the binary format if they are stored in the same directory as the ASCII files (./data/your_case/).
+
+Conversely, if you want to convert binary files to
+ascii files, execute the following command:
+> python ./utils/deflate.py [file_in_binary_format_with_bin_extension]
