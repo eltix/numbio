@@ -4,18 +4,12 @@ import numpy.linalg as lin
 from ioBin import *
 
 def Pmat(x, N, XTY, YTY):
-  M = (1./N)*sp.vstack(( XTY,sp.dot(x.T,YTY) ))
+  M = (1./N)*sp.vstack(( XTY, sp.dot(x.T,YTY) ))
   return M
 
 def Qmat(x, N, np, ny, YTY):
-  M = (1./N)*sp.vstack(( sp.zeros((np,ny)) ,sp.dot(x.T,YTY) ))
+  M = (1./N)*sp.vstack(( sp.zeros((np,ny)), sp.dot(x.T,YTY) ))
   return M
-
-def trueCost(x, N, np, ny, u, XTY, YTY):
-  xp   = x[:ny]; xm = x[ny:]; beta = xp-xm
-  K    = Pmat(xp, N, XTY, YTY) - Qmat(xm, N, np, ny, YTY)
-  cost = lin.norm(sp.dot(K,beta)-u)
-  return cost
 
 def J(x, N, np, ny, u, lam, XTY, YTY):
   xp   = x[:ny]; xm = x[ny:]; beta = xp-xm
@@ -34,6 +28,10 @@ def DJ(x, N, np, ny, u, lam, XTY, YTY):
   grad  = sp.hstack((gradp,gradm)) + lam*sp.ones(x.shape)
   return grad
 
+def varCons(x, YTYs, N, ny):
+  xp = x[:ny]; xm = x[ny:]; beta = xp-xm
+  return sp.absolute(1.-(1./N)*sp.dot(beta.T, sp.dot(YTYs, beta)) )
+
 def readInputFile(caseName):
   inputFile = open('./data/'+caseName+'/numbio.in','r')
   iterVal = [float(v) for v in inputFile.readline().split()]
@@ -41,6 +39,20 @@ def readInputFile(caseName):
   for i in range(3): iterVal[i] = int(iterVal[i])
   inputFile.close()
   return iterVal, l1Reg
+
+def editInputFile(caseName, np, lam):
+  inputFile = './data/'+caseName+'/numbio.in'
+  with open(inputFile, 'r') as f: content = f.readlines()
+  content[1] = " ".join([str(lam)]*np) + '\n'
+  with open(inputFile, 'w') as f: f.writelines(content)
+  return 0
+
+def editInputFile2(caseName, np, bestLam):
+  inputFile = './data/'+caseName+'/numbio.in'
+  with open(inputFile, 'r') as f: content = f.readlines()  
+  content[1] = " ".join([str(lam) for lam in bestLam]) + '\n'
+  with open(inputFile, 'w') as f: f.writelines(content)
+  return 0
 
 def loadParamSamples(caseName, N):
   X  = sp.loadtxt('./data/'+caseName+'/params.txt')
@@ -74,11 +86,12 @@ def loadModelOutputs(caseName, N):
 
   return Y, ny, nu, tau
 
-def descentStatus(i, Jlist, grad, x, N, np, ny, u, XTY, YTY):
-  toPrint =  'Iter # '+str(i)+': J(x)='+'{:.3e}'.format(Jlist[-1])+' | |DJ(x)|='
+def descentStatus(i, Jlist, grad, x, N, ip, np, ny, u, XTY, YTY):
+  toPrint = 'Param '+str(ip+1)+'/'+str(np)+' --- '
+  toPrint +=  'Iter # '+str(i)+': J(x)='+'{:.3e}'.format(Jlist[-1])+' | |DJ(x)|='
   toPrint += '{:.1e}'.format((lin.norm(grad)))+' | ||x||_1='
   toPrint += '{:.2e}'.format(lin.norm(x[:ny]-x[ny:],1))
-  toPrint += ' | cost='+'{:.2e}'.format(trueCost(x, N, np, ny, u, XTY, YTY))
+  toPrint += ' | cost='+'{:.2e}'.format(sp.sqrt(2.*J(x, N, np, ny, u, 0., XTY, YTY)))
   return toPrint
 
 def hasConverged(i, minIter, Jlist, tolStagnation):
